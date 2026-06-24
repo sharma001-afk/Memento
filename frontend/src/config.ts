@@ -7,12 +7,12 @@ const ENABLE_KNOWLEDGE_GRAPH = true;
 const ENABLE_RAG = true;
 const ENABLE_MULTI_MODEL = true;
 
-// AI Models Configuration
+// AI Models Configuration (OpenAI)
 const AI_MODELS = {
-  DEFAULT: 'gpt-4o',
+  DEFAULT: 'gpt-4o-mini',
   CREATIVE: 'gpt-4o',
-  ANALYTICAL: 'gemini-pro',
-  SUMMARIZATION: 'llama-3-70b',
+  ANALYTICAL: 'gpt-4o-mini',
+  SUMMARIZATION: 'gpt-4o-mini',
 };
 
 // Integration Endpoints

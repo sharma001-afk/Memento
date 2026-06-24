@@ -7,13 +7,12 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
 const Message = require('./models/Message');
-const axios = require('axios');
 const Memory = require('./models/Memory');
 const { analyzeMessage } = require('./utils/memoryDetection');
 const { createStuffDocumentsChain } = require('langchain/chains/combine_documents');
 const { ChatPromptTemplate } = require('@langchain/core/prompts');
 const { createRetrievalChain } = require('langchain/chains/retrieval');
-const { OllamaLLM } = require('./utils/ollama');
+const { generateText } = require('./utils/llm');
 const { processUserEmails } = require('./utils/emailProcessor');
 
 const app = express();
@@ -112,39 +111,22 @@ app.post('/ai/suggest', authenticateToken, async (req, res) => {
       return `${isUser ? 'You' : 'Friend'}: ${msg.text}`;
     }).join('\n');
     
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              { text: `Based on this chat history, suggest 3 short, natural responses I could send next:\n\n${chatHistory}` }
-            ]
-          }
-        ]
-      },
-      { headers: { 'Content-Type': 'application/json' } }
+    const aiText = await generateText(
+      `Based on this chat history, suggest 3 short, natural responses I could send next. Return them as a numbered list:\n\n${chatHistory}`
     );
 
-    if (!response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid API response');
-    }
-
-    const suggestions = response.data.candidates[0].content.parts[0].text
+    const suggestions = aiText
       .split(/\d+\./)
       .filter(text => text.trim().length > 0)
       .map(text => text.trim())
       .slice(0, 3);
-    
+
     res.json(suggestions);
   } catch (err) {
     console.error('AI suggestion error:', err.message);
     res.status(200).json(['How are you?', 'Nice to chat with you!', 'What\'s new?']);
   }
 });
-
-// Initialize Ollama LLM
-const llm = new OllamaLLM({});
 
 app.post('/api/email-query', authenticateToken, async (req, res) => {
   const { question } = req.body;
@@ -280,9 +262,9 @@ If the information isn't available, say so clearly.
 Answer: `;
     }
 
-    const response = await llm.invoke(prompt);
+    const response = await generateText(prompt);
 
-    res.json({ 
+    res.json({
       answer: response,
       context: 'Based on your emails'
     });
@@ -456,18 +438,7 @@ If it's about meetings or events, I'll check the schedule and provide details.
 Keep the response natural and conversational.`;
       }
 
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          contents: [{
-            parts: [{
-              text: contextPrompt
-            }]
-          }]
-        }
-      );
-
-      const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+      const aiResponse = (await generateText(contextPrompt)) || 'Sorry, I could not generate a response.';
 
       const aiMessage = new Message({
         text: aiResponse,
@@ -534,18 +505,9 @@ app.get('/memories', authenticateToken, async (req, res) => {
       .limit(20);
 
     const memoryTexts = memories.map(m => m.content).join('\n');
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [{
-          parts: [{
-            text: `Summarize these important points from chat messages. Focus on dates, decisions, and key information:\n\n${memoryTexts}`
-          }]
-        }]
-      }
-    );
-
-    const summary = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No summary available';
+    const summary = (await generateText(
+      `Summarize these important points from chat messages. Focus on dates, decisions, and key information:\n\n${memoryTexts}`
+    )) || 'No summary available';
 
     res.json({ memories, summary });
   } catch (err) {

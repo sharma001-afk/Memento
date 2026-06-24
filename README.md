@@ -34,10 +34,10 @@ Memento helps professionals stay on top of their commitments by:
 - **Meeting Detection**: Identifies scheduled meetings from calendar and email content
 - **Knowledge Graphs**: Build relationships between projects, people, and tasks
 - **RAG (Retrieval-Augmented Generation)**: Combines vector embeddings with LLMs for accurate context retrieval
-- **Multi-Model Support**: 
-  - GPT-4o for default processing
-  - Gemini Pro for analytical tasks
-  - Llama 3 70B for summarization
+- **OpenAI-Powered**:
+  - `gpt-4o-mini` (default) for chat, RAG answers, smart replies, and summaries
+  - `text-embedding-3-small` for document embeddings
+  - Model names are configurable via environment variables
 
 ### 💬 Conversational Interface
 - Chat with an AI assistant about your tasks and meetings
@@ -80,8 +80,8 @@ Memento helps professionals stay on top of their commitments by:
 ### AI & ML
 - **LangChain**: Complete LLM framework for chains, memory, and RAG
 - **ChromaDB**: Vector storage for embeddings and semantic search
-- **Multiple LLM Models**: GPT-4o, Gemini Pro, Llama 3 70B
-- **Embeddings**: Ollama-based embeddings for local processing
+- **OpenAI Chat**: `gpt-4o-mini` (default) for chat, RAG answers, and summaries
+- **OpenAI Embeddings**: `text-embedding-3-small` (1536-dim) for semantic search
 
 ---
 
@@ -103,7 +103,7 @@ Memento/
 │   ├── routes/                 # API routes (gmail, auth, etc.)
 │   ├── models/                 # MongoDB schemas
 │   ├── services/               # Business logic (gmailService, etc.)
-│   ├── utils/                  # Helpers (emailProcessor, ollama, etc.)
+│   ├── utils/                  # Helpers (emailProcessor, llm, etc.)
 │   ├── middleware/             # Auth middleware
 │   ├── server.js               # Express server entry
 │   └── package.json
@@ -120,6 +120,7 @@ Memento/
 - npm or yarn
 - MongoDB (local or Atlas connection)
 - ChromaDB running (for vector storage)
+- OpenAI API key (for chat, RAG, and embeddings)
 - Environment variables configured
 
 ### Installation
@@ -166,13 +167,13 @@ GMAIL_CLIENT_ID=your_gmail_client_id
 GMAIL_CLIENT_SECRET=your_gmail_client_secret
 GMAIL_REDIRECT_URI=http://localhost:5173/gmail/callback
 
-# LLM & AI
+# LLM & AI (OpenAI)
 OPENAI_API_KEY=your_openai_key
-GEMINI_API_KEY=your_gemini_key
+OPENAI_CHAT_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 # Vector Database
 CHROMA_URL=http://localhost:8000
-OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 #### Frontend (.env)
@@ -241,7 +242,7 @@ The app will be available at `http://localhost:5173`
 3. **Document Processing**: 
    - Emails are converted to documents
    - Metadata extracted (sender, date, subject, body)
-4. **Embeddings**: Documents are embedded using Ollama/LangChain
+4. **Embeddings**: Documents are embedded using OpenAI (`text-embedding-3-small`) via LangChain
 5. **Vector Storage**: Embeddings stored in ChromaDB for semantic search
 6. **Task Extraction**: AI analyzes emails to extract:
    - Meetings and deadlines

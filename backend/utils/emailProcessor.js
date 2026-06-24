@@ -3,7 +3,7 @@ const { Chroma } = require('@langchain/community/vectorstores/chroma');
 const { Document } = require('langchain/document');
 const GmailIntegration = require('../models/GmailIntegration');
 const gmailService = require('../services/gmailService');
-const { OllamaEmbeddings } = require('./ollama');
+const { getEmbeddings } = require('./llm');
 const axios = require('axios');
 
 // Initialize ChromaDB client with retry mechanism
@@ -100,7 +100,7 @@ async function processUserEmails(userId, vectorStores) {
       });
     });
 
-    const embeddings = new OllamaEmbeddings();
+    const embeddings = getEmbeddings();
     const collectionName = `emails_${userId}`.replace(/[^a-zA-Z0-9_]/g, '_');
 
     // Clean up existing collection
@@ -123,7 +123,7 @@ async function processUserEmails(userId, vectorStores) {
         'hnsw:space': 'cosine',
         'hnsw:construction_ef': 100,
         'hnsw:search_ef': 100,
-        'dimension': 1536 // Ollama default dimension
+        'dimension': 1536 // text-embedding-3-small dimension
       }
     });
 
